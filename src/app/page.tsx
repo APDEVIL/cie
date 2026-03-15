@@ -1,103 +1,123 @@
-import { headers } from "next/headers";
+// src/app/page.tsx
+import { BookOpen, Wrench, Route } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { cn } from "@/lib/utils";
 
-import { LatestPost } from "@/app/_components/Siedebar";
-import { auth } from "@/server/better-auth";
-import { getSession } from "@/server/better-auth/server";
-import { api, HydrateClient } from "@/trpc/server";
+const epics = [
+  {
+    title:       "Written Test",
+    subtitle:    "Epic 1 — 1st & 2nd Year",
+    description: "Manage CIE written test records, update marks, and generate summary reports.",
+    href:        "/cie-written",
+    icon:        BookOpen,
+    color:       "text-blue-600",
+    bg:          "bg-blue-50 dark:bg-blue-950",
+  },
+  {
+    title:       "Skill Test",
+    subtitle:    "Epic 2 — 1st & 2nd Year",
+    description: "Track skill test components like Lab Records, Viva, and Practicals.",
+    href:        "/cie-skill",
+    icon:        Wrench,
+    color:       "text-emerald-600",
+    bg:          "bg-emerald-50 dark:bg-emerald-950",
+  },
+  {
+    title:       "Pathway Courses",
+    subtitle:    "Epic 3 — 5th Semester",
+    description: "Manage pathway course CIE assessments and generate performance reports.",
+    href:        "/cie-pathway",
+    icon:        Route,
+    color:       "text-violet-600",
+    bg:          "bg-violet-50 dark:bg-violet-950",
+  },
+];
 
-export default async function Home() {
-	const hello = await api.post.hello({ text: "from tRPC" });
-	const session = await getSession();
+export default function DashboardPage() {
+  return (
+    <div className="space-y-8">
 
-	if (session) {
-		void api.post.getLatest.prefetch();
-	}
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Continuous Internal Evaluation — Written, Skill &amp; Pathway Course Management
+        </p>
+      </div>
 
-	return (
-		<HydrateClient>
-			<main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
-				<div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
-					<h1 className="font-extrabold text-5xl tracking-tight sm:text-[5rem]">
-						Create <span className="text-[hsl(280,100%,70%)]">T3</span> App
-					</h1>
-					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
-						<Link
-							className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20"
-							href="https://create.t3.gg/en/usage/first-steps"
-							target="_blank"
-						>
-							<h3 className="font-bold text-2xl">First Steps →</h3>
-							<div className="text-lg">
-								Just the basics - Everything you need to know to set up your
-								database and authentication.
-							</div>
-						</Link>
-						<Link
-							className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20"
-							href="https://create.t3.gg/en/introduction"
-							target="_blank"
-						>
-							<h3 className="font-bold text-2xl">Documentation →</h3>
-							<div className="text-lg">
-								Learn more about Create T3 App, the libraries it uses, and how
-								to deploy it.
-							</div>
-						</Link>
-					</div>
-					<div className="flex flex-col items-center gap-2">
-						<p className="text-2xl text-white">
-							{hello ? hello.greeting : "Loading tRPC query..."}
-						</p>
+      {/* Epic Cards */}
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {epics.map((epic) => {
+          const Icon = epic.icon;
+          return (
+            <Link key={epic.href} href={epic.href}>
+              <Card className="h-full cursor-pointer transition-shadow hover:shadow-md">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className={cn("rounded-lg p-2.5", epic.bg)}>
+                      <Icon className={cn("h-5 w-5", epic.color)} />
+                    </div>
+                  </div>
+                  <CardTitle className="mt-3 text-base">{epic.title}</CardTitle>
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {epic.subtitle}
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    {epic.description}
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+          );
+        })}
+      </div>
 
-						<div className="flex flex-col items-center justify-center gap-4">
-							<p className="text-center text-2xl text-white">
-								{session && <span>Logged in as {session.user?.name}</span>}
-							</p>
-							{!session ? (
-								<form>
-									<button
-										className="rounded-full bg-white/10 px-10 py-3 font-semibold no-underline transition hover:bg-white/20"
-										formAction={async () => {
-											"use server";
-											const res = await auth.api.signInSocial({
-												body: {
-													provider: "github",
-													callbackURL: "/",
-												},
-											});
-											if (!res.url) {
-												throw new Error("No URL returned from signInSocial");
-											}
-											redirect(res.url);
-										}}
-									>
-										Sign in with Github
-									</button>
-								</form>
-							) : (
-								<form>
-									<button
-										className="rounded-full bg-white/10 px-10 py-3 font-semibold no-underline transition hover:bg-white/20"
-										formAction={async () => {
-											"use server";
-											await auth.api.signOut({
-												headers: await headers(),
-											});
-											redirect("/");
-										}}
-									>
-										Sign out
-									</button>
-								</form>
-							)}
-						</div>
-					</div>
+      {/* Quick Actions */}
+      <div>
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+          Quick Actions
+        </h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {epics.map((epic) => {
+            const Icon = epic.icon;
+            return (
+              <Link
+                key={epic.href + "/new"}
+                href={epic.href + "/new"}
+                className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm transition-colors hover:bg-accent"
+              >
+                <div className={cn("rounded-md p-1.5", epic.bg)}>
+                  <Icon className={cn("h-4 w-4", epic.color)} />
+                </div>
+                <span className="font-medium">Add {epic.title} Record</span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
 
-					{session?.user && <LatestPost />}
-				</div>
-			</main>
-		</HydrateClient>
-	);
+      {/* Report Links */}
+      <div>
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+          Reports
+        </h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {epics.map((epic) => (
+            <Link
+              key={epic.href + "/report"}
+              href={epic.href + "/report"}
+              className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm transition-colors hover:bg-accent"
+            >
+              <span className="font-medium">{epic.title} Report</span>
+              <span className="ml-auto text-xs text-muted-foreground">View →</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+    </div>
+  );
 }
